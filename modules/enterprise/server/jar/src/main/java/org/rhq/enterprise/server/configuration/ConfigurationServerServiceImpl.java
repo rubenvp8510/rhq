@@ -84,6 +84,14 @@ public class ConfigurationServerServiceImpl implements ConfigurationServerServic
     }
 
     @Override
+    public PluginConfigurationUpdate getPluginConfigurationUpdates(int resourceId) {
+        ConfigurationManagerLocal configurationManager = LookupUtil.getConfigurationManager();
+        SubjectManagerLocal subjectManager = LookupUtil.getSubjectManager();
+        Subject overlord = subjectManager.getOverlord();
+        return configurationManager.getLatestPluginConfigurationUpdate(overlord, resourceId);
+    }
+
+    @Override
     public Configuration persistUpdatedPluginConfiguration(int resourceId, Configuration pluginConfiguration) {
         ConfigurationManagerLocal configurationManager = LookupUtil.getConfigurationManager();
         SubjectManagerLocal subjectManager = LookupUtil.getSubjectManager();

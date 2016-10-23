@@ -68,8 +68,10 @@ import org.rhq.core.clientapi.server.discovery.InventoryReport;
 import org.rhq.core.clientapi.server.discovery.StaleTypeException;
 import org.rhq.core.domain.configuration.Configuration;
 import org.rhq.core.domain.configuration.ConfigurationUtility;
+import org.rhq.core.domain.configuration.PluginConfigurationUpdate;
 import org.rhq.core.domain.configuration.Property;
 import org.rhq.core.domain.configuration.definition.ConfigurationDefinition;
+import org.rhq.core.domain.configuration.definition.PropertyDefinition;
 import org.rhq.core.domain.discovery.AvailabilityReport;
 import org.rhq.core.domain.discovery.MergeInventoryReportResults;
 import org.rhq.core.domain.discovery.MergeInventoryReportResults.ResourceTypeFlyweight;
@@ -855,7 +857,7 @@ public class InventoryManager extends AgentService implements ContainerService, 
             resource = container.getResource();
             MeasurementScheduleRequest availSchedule = container.getAvailabilitySchedule();
             boolean forceScanForRoot = availSchedule == null || availSchedule.isEnabled();
-            // force scan for root resource only if availability schedule is enabled 
+            // force scan for root resource only if availability schedule is enabled
             AvailabilityExecutor availExec = new CustomScanRootAvailabilityExecutor(this, resource, forceScanForRoot);
             if (changesOnly) {
                 availExec.sendChangesOnlyReportNextTime();
@@ -1930,25 +1932,42 @@ public class InventoryManager extends AgentService implements ContainerService, 
         Configuration result = resource.getPluginConfiguration();
 
         ConfigurationDefinition configDef = resource.getResourceType().getPluginConfigurationDefinition();
-        if (null == configDef) {
+        Configuration existingPluginConfig = resource.getPluginConfiguration().deepCopy(false);
+        Configuration defaultPluginConfig = ConfigurationUtility.createDefaultConfiguration(configDef);
+        ServerServices serverServices = this.configuration.getServerServices();
+
+        boolean configChanged = false;
+
+        if (null == configDef || serverServices == null) {
             return result;
         }
 
-        Configuration existingPluginConfig = resource.getPluginConfiguration().deepCopy(false);
-        Configuration defaultPluginConfig = ConfigurationUtility.createDefaultConfiguration(configDef);
-        boolean configChanged = false;
+        ConfigurationServerService configServerService = serverServices.getConfigurationServerService();
+        PluginConfigurationUpdate pluginUpdate = configServerService.getPluginConfigurationUpdates(resource.getId());
+        Map<String, PropertyDefinition> propDefsList = configDef.getPropertyDefinitions();
 
-        // for each property, update the existing plugin config if discovery has set a non-default value
         for (String propertyName : pluginConfig.getAllProperties().keySet()) {
             Property discoveredProp = pluginConfig.get(propertyName);
             Property defaultProp = defaultPluginConfig.get(propertyName);
-            if (!discoveredProp.equals(defaultProp)) {
+
+            if (pluginUpdate == null) { // No editions are made to this plugin, we can merge the discovery values
                 if (log.isDebugEnabled()) {
                     log.debug("Discovery reported a new version of " + resource + ". Updating value of config property"
                         + " from [" + existingPluginConfig.get(propertyName) + "] to [" + discoveredProp + "].");
                 }
                 existingPluginConfig.put(discoveredProp);
                 configChanged = true;
+            }else{
+                PropertyDefinition propDef = propDefsList.get(propertyName);
+                if (!discoveredProp.equals(defaultProp) && propDef.isReadOnly()) {
+                    if (log.isDebugEnabled()) {
+                        log.debug("Discovery reported a new version of " + resource
+                            + ". Updating value of config property" + " from ["
+                            + existingPluginConfig.get(propertyName) + "] to [" + discoveredProp + "].");
+                    }
+                    existingPluginConfig.put(discoveredProp);
+                    configChanged = true;
+                }
             }
         }
 

@@ -39,6 +39,7 @@ import org.rhq.core.clientapi.server.configuration.ConfigurationServerService;
 import org.rhq.core.clientapi.server.configuration.ConfigurationUpdateResponse;
 import org.rhq.core.clientapi.server.discovery.InventoryReport;
 import org.rhq.core.domain.configuration.Configuration;
+import org.rhq.core.domain.configuration.PluginConfigurationUpdate;
 import org.rhq.core.domain.resource.Resource;
 import org.rhq.core.pc.PluginContainer;
 import org.rhq.core.pc.PluginContainerConfiguration;
@@ -328,6 +329,12 @@ public class JBossASPluginTest {
 
         @Override
         public Configuration persistUpdatedPluginConfiguration(int resourceId, Configuration pluginConfiguration) {
+            // TODO Auto-generated method stub
+            return null;
+        }
+
+        @Override
+        public PluginConfigurationUpdate getPluginConfigurationUpdates(int resourceId) {
             // TODO Auto-generated method stub
             return null;
         }

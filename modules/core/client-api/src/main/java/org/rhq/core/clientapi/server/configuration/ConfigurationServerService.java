@@ -25,6 +25,7 @@ package org.rhq.core.clientapi.server.configuration;
 import org.rhq.core.communications.command.annotation.Asynchronous;
 import org.rhq.core.communications.command.annotation.LimitedConcurrency;
 import org.rhq.core.domain.configuration.Configuration;
+import org.rhq.core.domain.configuration.PluginConfigurationUpdate;
 
 /**
  * Interface that allows an agent to provide information about a resource's configuration.
@@ -82,5 +83,9 @@ public interface ConfigurationServerService {
      */
     @LimitedConcurrency(CONCURRENCY_LIMIT_CONFIG_UPDATE)
     Configuration persistUpdatedPluginConfiguration(int resourceId, Configuration pluginConfiguration);
+
+    @Asynchronous(guaranteedDelivery = true)
+    @LimitedConcurrency(CONCURRENCY_LIMIT_CONFIG_UPDATE)
+    PluginConfigurationUpdate getPluginConfigurationUpdates(int resourceId);
 
 }
