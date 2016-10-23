@@ -1942,7 +1942,9 @@ public class InventoryManager extends AgentService implements ContainerService, 
         for (String propertyName : pluginConfig.getAllProperties().keySet()) {
             Property discoveredProp = pluginConfig.get(propertyName);
             Property defaultProp = defaultPluginConfig.get(propertyName);
-            if (!discoveredProp.equals(defaultProp)) {
+            // If there is no default property value (defaultProp is null).
+            // there is no way for detect if user changed it, don't touch the property value
+            if (defaultProp != null && !discoveredProp.equals(defaultProp)) {
                 if (log.isDebugEnabled()) {
                     log.debug("Discovery reported a new version of " + resource + ". Updating value of config property"
                         + " from [" + existingPluginConfig.get(propertyName) + "] to [" + discoveredProp + "].");
