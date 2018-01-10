@@ -374,6 +374,7 @@ public class ConfigurationManagerBean implements ConfigurationManagerLocal, Conf
         if (resource == null) {
             throw new ResourceNotFoundException("Resource [" + resourceId + "] does not exist.");
         }
+        entityManager.remove(resource.getResourceConfiguration());
         resource.setResourceConfiguration(configuration);
         entityManager.merge(resource);
     }
@@ -1568,6 +1569,7 @@ public class ConfigurationManagerBean implements ConfigurationManagerLocal, Conf
         } else if (response.getStatus() == ConfigurationUpdateStatus.SUCCESS) {
             // link to the newer, persisted configuration object
             Resource resource = update.getResource();
+            entityManager.remove(resource.getResourceConfiguration());
             resource.setResourceConfiguration(update.getConfiguration().deepCopyWithoutProxies());
             notifyAlertConditionCacheManager("completeResourceConfigurationUpdate", update);
         }
